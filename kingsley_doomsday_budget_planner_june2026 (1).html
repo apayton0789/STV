@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kingsley Association • Doomsday Budget Planner • June 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Suppress Tailwind Play CDN "not for production" warning (acceptable for internal single-file operational tool) -->
+    <script>
+      (function() {
+        const origWarn = console.warn;
+        console.warn = function(...args) {
+          const msg = args[0];
+          if (typeof msg === 'string' && msg.includes('cdn.tailwindcss.com')) return;
+          origWarn.apply(console, args);
+        };
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Playfair+Display:wght@700&amp;display=swap');
+        
+        :root {
+            --sage: #8FAE8B;
+            --forest: #2D5A3D;
+            --warmblue: #5C8AA6;
+            --cream: #FDF9F3;
+            --terracotta: #D97757;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .heading-serif {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .warm-card {
+            background-color: white;
+            border: 1px solid #E5E0D5;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .warm-card:hover {
+            border-color: #8FAE8B;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+            transform: translateY(-1px);
+        }
+
+        .section-header {
+            font-size: 1.1rem;
+            letter-spacing: -0.025em;
+            color: #2D5A3D;
+        }
+
+        .doomsday-banner {
+            background: linear-gradient(90deg, #2D5A3D 0%, #3D6B4A 100%);
+        }
+
+        .countdown-digit {
+            font-variant-numeric: tabular-nums;
+            min-width: 2.5rem;
+        }
+
+        .planner-table th {
+            background-color: #2D5A3D;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .planner-table td {
+            font-size: 0.875rem;
+        }
+
+        .idea-card {
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .idea-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-tab {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            color: #2D5A3D;
+            font-weight: 600;
+        }
+        
+        .nav-tab.active:after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #8FAE8B;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .metric-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status-planned { background-color: #FEF3C7; color: #92400E; }
+        .status-invoice-requested { background-color: #DBEAFE; color: #1E40AF; }
+        .status-invoiced { background-color: #D1FAE5; color: #065F46; }
+        .status-completed { background-color: #C6F6D5; color: #276749; }
+
+        .toast {
+            animation: slideInUp 0.3s ease forwards, fadeOut 0.3s ease 2.7s forwards;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+            .warm-card, .planner-table { box-shadow: none; border: 1px solid #ccc; }
+            .planner-table th { background: #2D5A3D !important; color: white !important; -webkit-print-color-adjust: exact; }
+            .section-header { color: #2D5A3D !important; }
+            .countdown-digit { color: #2D5A3D; }
+            .doomsday-banner { background: #2D5A3D !important; -webkit-print-color-adjust: exact; }
+            @page { margin: 0.6in; }
+            .idea-card { break-inside: avoid; }
+        }
+        
+        .modal {
+            animation: modalPop 0.2s ease forwards;
+        }
+        
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .budget-number {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+    </style>
+</head>
+<body class="bg-[#FDF9F3] text-[#2D3A2E]">
+    <!-- Header -->
+    <header class="bg-white border-b border-[#E5E0D5] sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-x-4">
+                    <div class="w-11 h-11 bg-[#2D5A3D] rounded-2xl flex items-center justify-center">
+                        <span class="text-white text-2xl font-bold tracking-tighter">K</span>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline gap-x-2">
+                            <span class="font-semibold text-2xl tracking-tighter text-[#2D5A3D]">Kingsley Association</span>
+                        </div>
+                        <span class="text-xs text-[#6B6B5B] -mt-1 block">Opportunity Lives Here</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-3 text-sm">
+                    <div class="px-3 py-1.5 bg-[#F1EDE4] rounded-2xl text-[#5C5C4A] flex items-center gap-x-2 text-xs font-medium">
+                        <div class="w-2 h-2 bg-[#D97757] rounded-full animate-pulse"></div>
+                        <span>JUNE 2026 CLOSE</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-[#6B6B5B]">Director of Operations</div>
+                        <div class="font-medium text-[#2D5A3D]">Alexander Payton</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 pt-8 pb-16">
+        
+        <!-- DOOMSDAY ALERT + CLOCK -->
+        <div class="doomsday-banner rounded-3xl p-6 md:p-8 text-white mb-8 shadow-xl no-print">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div class="max-w-xl">
+                    <div class="flex items-center gap-x-3 mb-3">
+                        <span class="text-4xl">⏰</span>
+                        <div>
+                            <h1 class="text-3xl font-semibold tracking-tighter">Doomsday Spend Window</h1>
+                            <p class="text-white/90 text-lg">Invoices must be submitted by <span class="font-semibold">Thursday, June 25, 2026 at 5:00 PM EDT</span></p>
+                        </div>
+                    </div>
+                    <p class="text-white/80 text-[15px] leading-snug">Any remaining balances not properly invoiced by the deadline will be reallocated at Senior Leadership's discretion. Let's direct these resources to high-impact work in our Men and EmpowerHER programs while we still can.</p>
+                </div>
+                
+                <!-- COUNTDOWN -->
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 min-w-[280px]">
+                    <div class="text-xs uppercase tracking-[1.5px] text-white/70 mb-2 font-medium">TIME REMAINING TO INVOICE DEADLINE</div>
+                    <div id="countdown" class="flex items-baseline gap-x-1 text-4xl font-semibold tabular-nums tracking-tighter">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="text-[10px] text-white/60 mt-1">Days &nbsp; Hours &nbsp; Mins &nbsp; Secs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERVIEW -->
+        <div class="mb-8">
+            <div class="flex items-end justify-between mb-4 px-1">
+                <div>
+                    <h2 class="section-header text-2xl font-semibold tracking-tight">Current Budget Snapshot</h2>
+                    <p class="text-[#6B6B5B] text-sm">Data pulled from Budget Spend.xlsx • June 15, 2026</p>
+                </div>
+                <button onclick="refreshFromExcelDemo()" 
+                        class="no-print text-xs px-4 py-2 rounded-2xl border border-[#C9C3B5] hover:bg-white flex items-center gap-x-2 text-[#5C5C4A]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.058 11H1M12 3v2m0 16v2m9-9H15m-6 0a8.001 8.001 0 01-1.357-1.357" />
+                    </svg>
+                    <span>Refresh from latest Excel</span>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Kingsmile Card -->
+                <div class="warm-card rounded-3xl p-6 border border-[#E5E0D5]">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <span class="text-2xl">👥</span>
+                                <div>
+                                    <span class="font-semibold text-xl tracking-tight">Kingsmile Men Group</span>
+                                    <span class="block text-xs text-[#6B6B5B]">Year-round healing &amp; prevention initiative</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] uppercase tracking-widest text-[#8FAE8B] font-medium">REMAINING</div>
+                            <div id="kingsmile-remaining-display" class="text-4xl font-semibold tracking-tighter text-[#2D5A3D] budget-number">$6,280.09</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#6B6B5B]">Total Budget</span>
+                            <span class="font-medium">$8,000</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#6B6B5B]">Invoiced to date</span>
+                            <span class="font-medium text-[#D97757]">$1,719.91</span>
+                        </div>
+                        <div class="h-2.5 bg-[#F1EDE4] rounded-full overflow-hidden">
+                            <div class="h-2.5 bg-[#8FAE8B] rounded-full" style="width: 21.5%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-[#6B6B5B]">
+                            <span>21.5% spent</span>
+                            <span class="font-medium text-[#2D5A3D]">78.5% still to deploy</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="showSection('kingsmile-planner'); setTimeout(() => document.getElementById('kingsmile-planner').scrollIntoView({ behavior: 'smooth', block: 'start' }), 10);" 
+                            class="mt-5 w-full py-2.5 text-sm font-medium bg-[#2D5A3D] hover:bg-[#234732] active:bg-black transition-colors text-white rounded-2xl flex items-center justify-center gap-x-2">
+                        <span>Plan Kingsmile Spend</span>
+                        <span class="text-lg leading-none">→</span>
+                    </button>
+                </div>
+                
+                <!-- EmpowerHER Card -->
+                <div class="warm-card rounded-3xl p-6 border border-[#E5E0D5]">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <span class="text-2xl">🌸</span>
+                                <div>
+                                    <span class="font-semibold text-xl tracking-tight">EmpowerHER</span>
+                                    <span class="block text-xs text-[#6B6B5B]">Trauma-informed women's leadership</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] uppercase tracking-widest text-[#8FAE8B] font-medium">REMAINING</div>
+                            <div id="empower-remaining-display" class="text-4xl font-semibold tracking-tighter text-[#2D5A3D] budget-number">$5,752.56</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#6B6B5B]">Total Budget</span>
+                            <span class="font-medium">$8,000</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#6B6B5B]">Invoiced to date</span>
+                            <span class="font-medium text-[#D97757]">$2,247.44</span>
+                        </div>
+                        <div class="h-2.5 bg-[#F1EDE4] rounded-full overflow-hidden">
+                            <div class="h-2.5 bg-[#5C8AA6] rounded-full" style="width: 28.1%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-[#6B6B5B]">
+                            <span>28.1% spent</span>
+                            <span class="font-medium text-[#2D5A3D]">71.9% still to deploy</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="showSection('empower-planner'); setTimeout(() => document.getElementById('empower-planner').scrollIntoView({ behavior: 'smooth', block: 'start' }), 10);" 
+                            class="mt-5 w-full py-2.5 text-sm font-medium bg-[#5C8AA6] hover:bg-[#4A7085] active:bg-[#3D5F70] transition-colors text-white rounded-2xl flex items-center justify-center gap-x-2">
+                        <span>Plan EmpowerHER Spend</span>
+                        <span class="text-lg leading-none">→</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NAV TABS -->
+        <div class="flex items-center gap-x-1 mb-6 border-b border-[#E5E0D5] no-print">
+            <button onclick="showSection('overview-section')" class="nav-tab active px-5 py-3 text-sm font-medium text-[#2D5A3D]" id="tab-overview">Overview &amp; Guidance</button>
+            <button onclick="showSection('kingsmile-planner')" class="nav-tab px-5 py-3 text-sm font-medium text-[#6B6B5B] hover:text-[#2D5A3D]" id="tab-kingsmile">Kingsmile Planner</button>
+            <button onclick="showSection('empower-planner')" class="nav-tab px-5 py-3 text-sm font-medium text-[#6B6B5B] hover:text-[#2D5A3D]" id="tab-empower">EmpowerHER Planner</button>
+            <button onclick="showSection('guide-section')" class="nav-tab px-5 py-3 text-sm font-medium text-[#6B6B5B] hover:text-[#2D5A3D]" id="tab-guide">How to Use &amp; FAQ</button>
+        </div>
+
+        <!-- OVERVIEW SECTION -->
+        <div id="overview-section" class="section-content">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-7 warm-card rounded-3xl p-7 border border-[#E5E0D5]">
+                    <h3 class="font-semibold text-lg tracking-tight mb-4 flex items-center gap-x-2">
+                        <span>🎯</span> 
+                        <span>High-Impact Spending Ideas (Approved Categories)</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div class="p-3 bg-[#F8F5F0] rounded-2xl">
+                            <div class="font-medium text-[#2D5A3D]">Kingsmile Men</div>
+                            <ul class="mt-1.5 space-y-1 text-xs text-[#4A4A3A]">
+                                <li>• Bi-monthly meals &amp; groceries ($175/session)</li>
+                                <li>• Guest speaker honoraria (healing, prevention, wellness)</li>
+                                <li>• Collaborative events with partners</li>
+                                <li>• Curriculum, books &amp; wellness supplies</li>
+                                <li>• Staff / facilitator training &amp; professional development</li>
+                                <li>• Participant gifts (journals, self-care kits)</li>
+                                <li>• Outreach materials &amp; community events</li>
+                            </ul>
+                        </div>
+                        <div class="p-3 bg-[#F8F5F0] rounded-2xl">
+                            <div class="font-medium text-[#5C8AA6]">EmpowerHER</div>
+                            <ul class="mt-1.5 space-y-1 text-xs text-[#4A4A3A]">
+                                <li>• Monthly food sessions (~$250 each)</li>
+                                <li>• Speaker honoraria (leadership, trauma-informed topics)</li>
+                                <li>• Workshop materials &amp; art supplies</li>
+                                <li>• Books, journals &amp; empowerment curriculum</li>
+                                <li>• Coordination support &amp; facilitator pay</li>
+                                <li>• Self-care / wellness kits for participants</li>
+                                <li>• Mini-trips, retreats or experiential learning</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-[#6B6B5B] mt-4">All spends must align with program goals and include proper documentation/invoice for finance. Gifts and participant items are acceptable when tied directly to program outcomes.</p>
+                </div>
+                
+                <div class="lg:col-span-5 warm-card rounded-3xl p-7 border border-[#E5E0D5] flex flex-col">
+                    <h3 class="font-semibold text-lg tracking-tight mb-3">What Happens After June 25?</h3>
+                    <div class="flex-1 text-sm text-[#4A4A3A] space-y-2.5">
+                        <p>Any funds not invoiced by the deadline move to Senior Leadership for reallocation across the organization. This is our window to protect program impact.</p>
+                        <div class="pt-2 border-t border-[#E5E0D5]">
+                            <div class="text-xs text-[#6B6B5B]">Focus: Get as much as possible planned and invoiced by <span class="font-semibold text-[#D97757]">June 25, 5:00 PM</span>. Every dollar we invoice stays in our programs.</div>
+                        </div>
+                    </div>
+                    <div class="mt-auto pt-4 text-[10px] text-[#6B6B5B]">
+                        Export to Excel to save or share your plan. Re-upload the same file later to continue editing.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KINGSMILE PLANNER -->
+        <div id="kingsmile-planner" class="section-content hidden">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <div class="flex items-center gap-x-3">
+                    <span class="text-3xl">👥</span>
+                    <div>
+                        <span class="font-semibold text-2xl tracking-tight">Kingsmile Men Group Planner</span>
+                        <span class="ml-2 text-xs px-2.5 py-0.5 rounded-full bg-[#E8F0E6] text-[#2D5A3D]">Men's healing &amp; prevention</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-x-2 no-print">
+                    <button onclick="adjustRemaining('kingsmile')" class="text-xs px-3 py-1.5 rounded-2xl border border-[#C9C3B5] hover:bg-white flex items-center gap-x-1.5 text-[#5C5C4A]">
+                        <span>Adjust Remaining</span>
+                    </button>
+                    <button onclick="exportProgramPlan('kingsmile')" class="text-xs px-4 py-1.5 bg-[#2D5A3D] text-white rounded-2xl flex items-center gap-x-2 hover:bg-[#234732]">
+                        <span>Export to Excel</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Remaining summary bar -->
+            <div class="mb-5 flex items-center gap-x-4 bg-white border border-[#E5E0D5] rounded-2xl px-5 py-3">
+                <div>
+                    <span class="text-xs text-[#6B6B5B]">CURRENT REMAINING</span>
+                    <span id="kingsmile-remaining-bar" class="ml-2 text-2xl font-semibold tracking-tighter text-[#2D5A3D] budget-number">$6,280.09</span>
+                </div>
+                <div class="flex-1">
+                    <div class="text-xs text-[#6B6B5B] flex justify-between mb-1">
+                        <span>Planned so far</span>
+                        <span id="kingsmile-planned-pct">0% of remaining</span>
+                    </div>
+                    <div class="h-2 bg-[#F1EDE4] rounded-full overflow-hidden">
+                        <div id="kingsmile-progress" class="h-2 bg-[#8FAE8B] transition-all rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="text-right text-xs">
+                    <div id="kingsmile-planned-total" class="font-semibold text-[#2D5A3D]">$0</div>
+                    <div class="text-[#6B6B5B]">planned</div>
+                </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <span class="text-sm font-semibold text-[#2D5A3D]">Quick-add suggestions — tap to add to plan</span>
+                    <span class="text-[10px] text-[#8FAE8B]">Tailored to Kingsmile goals</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" id="kingsmile-suggestions">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Add form -->
+            <div class="warm-card rounded-3xl p-5 border border-[#E5E0D5] mb-4 no-print">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-medium text-sm">Add custom expense</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-3">
+                        <select id="ks-category" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2 bg-white">
+                            <option>Meals &amp; Groceries</option>
+                            <option>Speaker Honoraria</option>
+                            <option>Curriculum &amp; Books</option>
+                            <option>Training &amp; Professional Dev</option>
+                            <option>Participant Gifts &amp; Wellness</option>
+                            <option>Events &amp; Collaborations</option>
+                            <option>Outreach &amp; Printing</option>
+                            <option>Trips &amp; Experiences</option>
+                            <option>Other / Coordination</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-4">
+                        <input id="ks-description" type="text" placeholder="Description (e.g. June 27 meal supplies for 22 men)" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <input id="ks-amount" type="number" step="0.01" placeholder="Amount $" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <input id="ks-vendor" type="text" placeholder="Vendor / Payee" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2">
+                    </div>
+                    <div class="md:col-span-1">
+                        <button onclick="addExpense('kingsmile')" class="w-full h-full bg-[#2D5A3D] hover:bg-[#234732] text-white text-sm font-medium rounded-2xl flex items-center justify-center">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="warm-card rounded-3xl overflow-hidden border border-[#E5E0D5]">
+                <table class="planner-table w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-5 py-3 text-left w-40">Category</th>
+                            <th class="px-5 py-3 text-left">Description</th>
+                            <th class="px-4 py-3 text-right w-24">Amount</th>
+                            <th class="px-5 py-3 text-left w-36">Vendor / Payee</th>
+                            <th class="px-4 py-3 text-center w-28">Status</th>
+                            <th class="px-4 py-3 text-left">Notes</th>
+                            <th class="px-3 py-3 w-20 no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="kingsmile-table-body" class="divide-y divide-[#E5E0D5] bg-white text-sm">
+                        <!-- JS populated -->
+                    </tbody>
+                    <tfoot class="bg-[#F8F5F0]">
+                        <tr class="font-medium">
+                            <td colspan="2" class="px-5 py-3 text-right text-xs text-[#6B6B5B]">TOTAL PLANNED</td>
+                            <td id="kingsmile-total-cell" class="px-4 py-3 text-right font-semibold text-[#2D5A3D]">$0.00</td>
+                            <td colspan="4" class="px-5 py-3 text-xs text-[#6B6B5B]">Projected remaining after plan: <span id="kingsmile-projected" class="font-semibold text-[#2D5A3D]">$7,371</span></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div class="flex justify-between items-center mt-3 px-1 text-xs text-[#6B6B5B] no-print">
+                <div>Auto-saved in your browser • Changes persist until you clear data</div>
+                <div class="flex gap-x-4">
+                    <button onclick="clearProgramPlan('kingsmile')" class="hover:text-[#D97757]">Clear all for Kingsmile</button>
+                    <button onclick="uploadPlanForProgram('kingsmile')" class="hover:text-[#2D5A3D]">Upload previous Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPOWERHER PLANNER -->
+        <div id="empower-planner" class="section-content hidden">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <div class="flex items-center gap-x-3">
+                    <span class="text-3xl">🌸</span>
+                    <div>
+                        <span class="font-semibold text-2xl tracking-tight">EmpowerHER Planner</span>
+                        <span class="ml-2 text-xs px-2.5 py-0.5 rounded-full bg-[#E8EEF3] text-[#5C8AA6]">Women's leadership &amp; trauma-informed</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-x-2 no-print">
+                    <button onclick="adjustRemaining('empower')" class="text-xs px-3 py-1.5 rounded-2xl border border-[#C9C3B5] hover:bg-white flex items-center gap-x-1.5 text-[#5C5C4A]">
+                        <span>Adjust Remaining</span>
+                    </button>
+                    <button onclick="exportProgramPlan('empower')" class="text-xs px-4 py-1.5 bg-[#5C8AA6] text-white rounded-2xl flex items-center gap-x-2 hover:bg-[#4A7085]">
+                        <span>Export to Excel</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-5 flex items-center gap-x-4 bg-white border border-[#E5E0D5] rounded-2xl px-5 py-3">
+                <div>
+                    <span class="text-xs text-[#6B6B5B]">CURRENT REMAINING</span>
+                    <span id="empower-remaining-bar" class="ml-2 text-2xl font-semibold tracking-tighter text-[#2D5A3D] budget-number">$5,752.56</span>
+                </div>
+                <div class="flex-1">
+                    <div class="text-xs text-[#6B6B5B] flex justify-between mb-1">
+                        <span>Planned so far</span>
+                        <span id="empower-planned-pct">0% of remaining</span>
+                    </div>
+                    <div class="h-2 bg-[#F1EDE4] rounded-full overflow-hidden">
+                        <div id="empower-progress" class="h-2 bg-[#5C8AA6] transition-all rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="text-right text-xs">
+                    <div id="empower-planned-total" class="font-semibold text-[#2D5A3D]">$0</div>
+                    <div class="text-[#6B6B5B]">planned</div>
+                </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <span class="text-sm font-semibold text-[#5C8AA6]">Quick-add suggestions — tap to add to plan</span>
+                    <span class="text-[10px] text-[#5C8AA6]">Tailored to EmpowerHER goals</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" id="empower-suggestions">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Add form -->
+            <div class="warm-card rounded-3xl p-5 border border-[#E5E0D5] mb-4 no-print">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-medium text-sm">Add custom expense</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-3">
+                        <select id="eh-category" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2 bg-white">
+                            <option>Food Sessions &amp; Meals</option>
+                            <option>Speaker Honoraria</option>
+                            <option>Workshop Materials</option>
+                            <option>Curriculum &amp; Books</option>
+                            <option>Training &amp; Professional Dev</option>
+                            <option>Participant Gifts &amp; Wellness</option>
+                            <option>Coordination &amp; Support</option>
+                            <option>Trips &amp; Experiences</option>
+                            <option>Outreach &amp; Events</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-4">
+                        <input id="eh-description" type="text" placeholder="Description (e.g. July self-care kit supplies for 18 women)" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <input id="eh-amount" type="number" step="0.01" placeholder="Amount $" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <input id="eh-vendor" type="text" placeholder="Vendor / Payee" class="w-full text-sm border border-[#C9C3B5] rounded-2xl px-3 py-2">
+                    </div>
+                    <div class="md:col-span-1">
+                        <button onclick="addExpense('empower')" class="w-full h-full bg-[#5C8AA6] hover:bg-[#4A7085] text-white text-sm font-medium rounded-2xl flex items-center justify-center">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="warm-card rounded-3xl overflow-hidden border border-[#E5E0D5]">
+                <table class="planner-table w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-5 py-3 text-left w-40">Category</th>
+                            <th class="px-5 py-3 text-left">Description</th>
+                            <th class="px-4 py-3 text-right w-24">Amount</th>
+                            <th class="px-5 py-3 text-left w-36">Vendor / Payee</th>
+                            <th class="px-4 py-3 text-center w-28">Status</th>
+                            <th class="px-4 py-3 text-left">Notes</th>
+                            <th class="px-3 py-3 w-20 no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="empower-table-body" class="divide-y divide-[#E5E0D5] bg-white text-sm">
+                        <!-- JS populated -->
+                    </tbody>
+                    <tfoot class="bg-[#F8F5F0]">
+                        <tr class="font-medium">
+                            <td colspan="2" class="px-5 py-3 text-right text-xs text-[#6B6B5B]">TOTAL PLANNED</td>
+                            <td id="empower-total-cell" class="px-4 py-3 text-right font-semibold text-[#2D5A3D]">$0.00</td>
+                            <td colspan="4" class="px-5 py-3 text-xs text-[#6B6B5B]">Projected remaining after plan: <span id="empower-projected" class="font-semibold text-[#2D5A3D]">$6,920</span></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div class="flex justify-between items-center mt-3 px-1 text-xs text-[#6B6B5B] no-print">
+                <div>Auto-saved in your browser • Changes persist until you clear data</div>
+                <div class="flex gap-x-4">
+                    <button onclick="clearProgramPlan('empower')" class="hover:text-[#D97757]">Clear all for EmpowerHER</button>
+                    <button onclick="uploadPlanForProgram('empower')" class="hover:text-[#5C8AA6]">Upload previous Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GUIDE / FAQ -->
+        <div id="guide-section" class="section-content hidden max-w-3xl">
+            <div class="warm-card rounded-3xl p-8 border border-[#E5E0D5]">
+                <h3 class="font-semibold text-xl tracking-tight mb-5">How to use this planner effectively</h3>
+                
+                <div class="space-y-6 text-sm">
+                    <div>
+                        <div class="font-medium text-[#2D5A3D] mb-1">1. Review the clock &amp; overview</div>
+                        <p class="text-[#4A4A3A]">You have until Thursday June 25, 5pm to get invoices submitted. The tool shows exactly how much is left for each program.</p>
+                    </div>
+                    <div>
+                        <div class="font-medium text-[#2D5A3D] mb-1">2. Add from suggestions or custom</div>
+                        <p class="text-[#4A4A3A]">Click any suggestion card to instantly add a realistic line item. Or use the quick-add form for your own ideas. Keep descriptions specific (who, what, when, how many people).</p>
+                    </div>
+                    <div>
+                        <div class="font-medium text-[#2D5A3D] mb-1">3. Update status as you move</div>
+                        <p class="text-[#4A4A3A]">Change status from "Planned" → "Invoice Requested" → "Invoiced". This helps leadership see progress at a glance when you export.</p>
+                    </div>
+                    <div>
+                        <div class="font-medium text-[#2D5A3D] mb-1">4. Export &amp; share</div>
+                        <p class="text-[#4A4A3A]">Use the Export to Excel button. The file includes a summary + your planned items in a clean format that finance and leadership can read. You can also re-upload that same file later to continue planning.</p>
+                    </div>
+                    <div>
+                        <div class="font-medium text-[#2D5A3D] mb-1">5. Print for meetings</div>
+                        <p class="text-[#4A4A3A]">Click the print icon in your browser (or Ctrl/Cmd+P). The page is optimized with clean tables and the deadline reminder. Great for bringing to a quick sync with program staff or leadership.</p>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t text-xs text-[#6B6B5B]">
+                    <strong>Tip:</strong> If new invoices come in before you finish planning, click "Adjust Remaining" on the planner page to update the number. The tool will recalculate everything.
+                </div>
+            </div>
+        </div>
+
+        <!-- Global actions bar -->
+        <div class="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 no-print">
+            <button onclick="exportBothPrograms()" 
+                    class="px-6 py-2.5 bg-white border border-[#C9C3B5] hover:bg-[#F8F5F0] text-sm font-medium rounded-2xl flex items-center gap-x-2 shadow-sm">
+                <span>📊</span>
+                <span>Export Combined Report (Both Programs)</span>
+            </button>
+            <button onclick="window.print()" 
+                    class="px-6 py-2.5 bg-white border border-[#C9C3B5] hover:bg-[#F8F5F0] text-sm font-medium rounded-2xl flex items-center gap-x-2 shadow-sm">
+                <span>🖨️</span>
+                <span>Print Planner Sheets</span>
+            </button>
+            <button onclick="downloadTemplate()" 
+                    class="px-6 py-2.5 text-sm font-medium text-[#5C5C4A] hover:text-[#2D5A3D] flex items-center gap-x-2">
+                <span>Download blank template</span>
+            </button>
+        </div>
+        
+        <div class="text-center mt-8 text-[10px] text-[#8A8A7A]">
+            Kingsley Association • Internal Operations Tool • Generated June 15, 2026 • Data will not leave your browser until you export
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+        <div class="modal bg-white rounded-3xl w-full max-w-lg p-6 border border-[#E5E0D5]">
+            <div class="flex justify-between items-center mb-5">
+                <span class="font-semibold text-lg" id="modal-title">Edit Expense</span>
+                <button onclick="closeModal()" class="text-2xl leading-none text-[#8A8A7A] hover:text-black">&times;</button>
+            </div>
+            
+            <input type="hidden" id="modal-program">
+            <input type="hidden" id="modal-id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-[#6B6B5B] block mb-1">Category</label>
+                    <select id="modal-category" class="w-full border border-[#C9C3B5] rounded-2xl px-3 py-2 text-sm">
+                        <!-- Options populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-[#6B6B5B] block mb-1">Description</label>
+                    <input id="modal-description" type="text" class="w-full border border-[#C9C3B5] rounded-2xl px-3 py-2 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-[#6B6B5B] block mb-1">Amount ($)</label>
+                        <input id="modal-amount" type="number" step="0.01" class="w-full border border-[#C9C3B5] rounded-2xl px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-[#6B6B5B] block mb-1">Vendor / Payee</label>
+                        <input id="modal-vendor" type="text" class="w-full border border-[#C9C3B5] rounded-2xl px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-[#6B6B5B] block mb-1">Status</label>
+                    <select id="modal-status" class="w-full border border-[#C9C3B5] rounded-2xl px-3 py-2 text-sm">
+                        <option value="Planned">Planned</option>
+                        <option value="Invoice Requested">Invoice Requested</option>
+                        <option value="Invoiced">Invoiced</option>
+                        <option value="Paid / Completed">Paid / Completed</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-[#6B6B5B] block mb-1">Notes</label>
+                    <textarea id="modal-notes" rows="2" class="w-full border border-[#C9C3B5] rounded-2xl px-3 py-2 text-sm"></textarea>
+                </div>
+            </div>
+            
+            <div class="flex gap-x-3 mt-6">
+                <button onclick="saveModalEdit()" class="flex-1 py-2.5 bg-[#2D5A3D] text-white rounded-2xl text-sm font-medium">Save Changes</button>
+                <button onclick="closeModal()" class="flex-1 py-2.5 border border-[#C9C3B5] rounded-2xl text-sm font-medium">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[200] space-y-2"></div>
+
+    <script>
+        // Tailwind config
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent-sage', '#8FAE8B');
+        }
+        
+        // State
+        let kingsmilePlan = [];
+        let empowerPlan = [];
+        let kingsmileRemaining = 6280.09;
+        let empowerRemaining = 5752.56;
+        // localStorage is used with safe fallbacks (no visible warning banner)
+        
+        // Safe localStorage wrapper (handles sandboxed iframes / file:// restrictions)
+        function safeLocalStorageGet(key) {
+            try {
+                return localStorage.getItem(key);
+            } catch (e) {
+                localStorageAvailable = false;
+                return null;
+            }
+        }
+        
+        function safeLocalStorageSet(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                localStorageAvailable = false;
+                return false;
+            }
+        }
+        
+        // Load from localStorage (with graceful fallback)
+        function loadState() {
+            const ksPlan = safeLocalStorageGet('kingsley_kingsmile_plan');
+            if (ksPlan) {
+                try { kingsmilePlan = JSON.parse(ksPlan); } catch(e) {}
+            }
+            
+            const ehPlan = safeLocalStorageGet('kingsley_empower_plan');
+            if (ehPlan) {
+                try { empowerPlan = JSON.parse(ehPlan); } catch(e) {}
+            }
+            
+            const ksRem = safeLocalStorageGet('kingsley_kingsmile_remaining');
+            if (ksRem) {
+                const parsed = parseFloat(ksRem);
+                if (!isNaN(parsed)) kingsmileRemaining = parsed;
+            }
+            
+            const ehRem = safeLocalStorageGet('kingsley_empower_remaining');
+            if (ehRem) {
+                const parsed = parseFloat(ehRem);
+                if (!isNaN(parsed)) empowerRemaining = parsed;
+            }
+            
+            // Update displays
+            updateOverviewDisplays();
+        }
+        
+        function saveState(program = null) {
+            if (!program || program === 'kingsmile') {
+                safeLocalStorageSet('kingsley_kingsmile_plan', JSON.stringify(kingsmilePlan));
+                safeLocalStorageSet('kingsley_kingsmile_remaining', kingsmileRemaining);
+            }
+            if (!program || program === 'empower') {
+                safeLocalStorageSet('kingsley_empower_plan', JSON.stringify(empowerPlan));
+                safeLocalStorageSet('kingsley_empower_remaining', empowerRemaining);
+            }
+        }
+        
+        function updateOverviewDisplays() {
+            // Kingsmile
+            const ksRemEl = document.getElementById('kingsmile-remaining-display');
+            if (ksRemEl) ksRemEl.textContent = '$' + kingsmileRemaining.toLocaleString();
+            
+            // Empower
+            const ehRemEl = document.getElementById('empower-remaining-display');
+            if (ehRemEl) ehRemEl.textContent = '$' + empowerRemaining.toLocaleString();
+        }
+        
+        // Countdown
+        function startCountdown() {
+            const deadline = new Date('2026-06-25T17:00:00-04:00'); // June 25, 5pm EDT
+            
+            function update() {
+                const now = new Date();
+                const diff = deadline - now;
+                
+                const countdownEl = document.getElementById('countdown');
+                if (!countdownEl) return;
+                
+                if (diff <= 0) {
+                    countdownEl.innerHTML = `
+                        <div class="text-2xl text-[#D97757] font-semibold">DEADLINE PASSED</div>
+                        <div class="text-xs text-white/70">Contact Senior Leadership immediately</div>
+                    `;
+                    return;
+                }
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                countdownEl.innerHTML = `
+                    <div class="flex gap-x-3 items-baseline">
+                        <div><span class="countdown-digit text-5xl font-semibold">${days}</span><span class="text-xs align-super ml-0.5 text-white/60">D</span></div>
+                        <div class="text-white/40">:</div>
+                        <div><span class="countdown-digit text-5xl font-semibold">${hours.toString().padStart(2,'0')}</span><span class="text-xs align-super ml-0.5 text-white/60">H</span></div>
+                        <div class="text-white/40">:</div>
+                        <div><span class="countdown-digit text-5xl font-semibold">${mins.toString().padStart(2,'0')}</span><span class="text-xs align-super ml-0.5 text-white/60">M</span></div>
+                        <div class="text-white/40">:</div>
+                        <div><span class="countdown-digit text-5xl font-semibold">${secs.toString().padStart(2,'0')}</span><span class="text-xs align-super ml-0.5 text-white/60">S</span></div>
+                    </div>
+                `;
+            }
+            
+            update();
+            setInterval(update, 1000);
+        }
+        
+        // Show/hide sections
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update tabs
+            document.querySelectorAll('[id^="tab-"]').forEach(tab => tab.classList.remove('active', 'text-[#2D5A3D]'));
+            document.querySelectorAll('[id^="tab-"]').forEach(tab => tab.classList.add('text-[#6B6B5B]'));
+            
+            let tabId = 'tab-overview';
+            if (sectionId === 'kingsmile-planner') tabId = 'tab-kingsmile';
+            else if (sectionId === 'empower-planner') tabId = 'tab-empower';
+            else if (sectionId === 'guide-section') tabId = 'tab-guide';
+            
+            const activeTab = document.getElementById(tabId);
+            if (activeTab) {
+                activeTab.classList.add('active', 'text-[#2D5A3D]');
+                activeTab.classList.remove('text-[#6B6B5B]');
+            }
+        }
+        
+        // Render suggestions
+        function renderSuggestions() {
+            // Kingsmile suggestions
+            const ksContainer = document.getElementById('kingsmile-suggestions');
+            ksContainer.innerHTML = '';
+            
+            const ksIdeas = [
+                { cat: 'Meals & Groceries', desc: 'Bi-monthly meal supplies for June/July sessions' },
+                { cat: 'Speaker Honoraria', desc: 'Guest speaker — healing & prevention topic' },
+                { cat: 'Curriculum & Books', desc: 'Healing, leadership or wellness books + curriculum materials' },
+                { cat: 'Training & Professional Dev', desc: 'Facilitator or staff training / professional development' },
+                { cat: 'Participant Gifts & Wellness', desc: 'Journals, self-care items or participant wellness materials' },
+                { cat: 'Events & Collaborations', desc: 'Collaborative event supplies or partner activity costs' }
+            ];
+            
+            ksIdeas.forEach(idea => {
+                const card = document.createElement('div');
+                card.className = `idea-card bg-white border border-[#E5E0D5] hover:border-[#8FAE8B] rounded-2xl p-3.5 cursor-pointer text-xs`;
+                card.innerHTML = `
+                    <div class="font-medium text-[#2D5A3D] mb-0.5">${idea.cat}</div>
+                    <div class="text-[#4A4A3A] leading-snug">${idea.desc}</div>
+                    <div class="text-[10px] text-[#8FAE8B] mt-2 font-medium">+ Add idea →</div>
+                `;
+                card.onclick = () => {
+                    addSuggestionToPlan('kingsmile', idea);
+                };
+                ksContainer.appendChild(card);
+            });
+            
+            // EmpowerHER suggestions
+            const ehContainer = document.getElementById('empower-suggestions');
+            ehContainer.innerHTML = '';
+            
+            const ehIdeas = [
+                { cat: 'Food Sessions & Meals', desc: 'Monthly food session supplies or healthy catering' },
+                { cat: 'Speaker Honoraria', desc: 'Women’s leadership or trauma-informed speaker' },
+                { cat: 'Workshop Materials', desc: 'Art supplies, journals or reflection materials' },
+                { cat: 'Participant Gifts & Wellness', desc: 'Self-care kits or participant empowerment items' },
+                { cat: 'Curriculum & Books', desc: 'Leadership, healing or empowerment books + workbooks' },
+                { cat: 'Trips & Experiences', desc: 'Wellness outing, nature experience or field trip' }
+            ];
+            
+            ehIdeas.forEach(idea => {
+                const card = document.createElement('div');
+                card.className = `idea-card bg-white border border-[#E5E0D5] hover:border-[#5C8AA6] rounded-2xl p-3.5 cursor-pointer text-xs`;
+                card.innerHTML = `
+                    <div class="font-medium text-[#5C8AA6] mb-0.5">${idea.cat}</div>
+                    <div class="text-[#4A4A3A] leading-snug">${idea.desc}</div>
+                    <div class="text-[10px] text-[#5C8AA6] mt-2 font-medium">+ Add idea →</div>
+                `;
+                card.onclick = () => {
+                    addSuggestionToPlan('empower', idea);
+                };
+                ehContainer.appendChild(card);
+            });
+        }
+        
+        function addSuggestionToPlan(program, idea) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const newItem = {
+                id: Date.now(),
+                category: idea.cat,
+                description: idea.desc,
+                amount: 0,           // User must enter the real cost for clear invoicing
+                vendor: '',
+                status: 'Planned',
+                notes: '',
+                added: new Date().toISOString().split('T')[0]
+            };
+            plan.push(newItem);
+            saveState(program);
+            renderPlanTable(program);
+            showToast(`${idea.cat} added — enter the real amount`, 'success');
+            
+            // Open edit modal immediately so user enters the actual invoiceable cost
+            setTimeout(() => {
+                editItem(program, newItem.id);
+            }, 50);
+        }
+        
+        // Render table for a program
+        function renderPlanTable(program) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const tbody = document.getElementById(program === 'kingsmile' ? 'kingsmile-table-body' : 'empower-table-body');
+            tbody.innerHTML = '';
+            
+            if (plan.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="7" class="px-5 py-8 text-center text-xs text-[#8A8A7A]">No expenses planned yet.<br>Use the suggestion cards above or the quick-add form below. Amounts must reflect real invoiceable costs.</td>`;
+                tbody.appendChild(tr);
+            } else {
+                plan.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-[#FAF8F3]';
+                    
+                    const statusClass = item.status === 'Planned' ? 'status-planned' : 
+                                       item.status === 'Invoice Requested' ? 'status-invoice-requested' :
+                                       item.status === 'Invoiced' ? 'status-invoiced' : 'status-completed';
+                    
+                    tr.innerHTML = `
+                        <td class="px-5 py-3 font-medium text-[#2D3A2E]">${item.category}</td>
+                        <td class="px-5 py-3 text-[#4A4A3A]">${item.description}</td>
+                        <td class="px-4 py-3 text-right font-medium">$${item.amount.toFixed(2)}</td>
+                        <td class="px-5 py-3 text-[#4A4A3A]">${item.vendor || '<span class="text-[#A0A090] italic">—</span>'}</td>
+                        <td class="px-4 py-3">
+                            <select onchange="updateItemStatus('${program}', ${item.id}, this.value)" class="text-xs px-2 py-0.5 rounded-xl border-0 ${statusClass}">
+                                <option value="Planned" ${item.status === 'Planned' ? 'selected' : ''}>Planned</option>
+                                <option value="Invoice Requested" ${item.status === 'Invoice Requested' ? 'selected' : ''}>Invoice Requested</option>
+                                <option value="Invoiced" ${item.status === 'Invoiced' ? 'selected' : ''}>Invoiced</option>
+                                <option value="Paid / Completed" ${item.status === 'Paid / Completed' ? 'selected' : ''}>Paid / Completed</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-[#5C5C4A]">${item.notes || ''}</td>
+                        <td class="px-3 py-3 text-right no-print">
+                            <div class="flex items-center justify-end gap-x-1">
+                                <button onclick="editItem('${program}', ${item.id})" class="p-1 text-[#6B6B5B] hover:text-[#2D5A3D]" title="Edit">✎</button>
+                                <button onclick="duplicateItem('${program}', ${item.id})" class="p-1 text-[#6B6B5B] hover:text-[#2D5A3D]" title="Duplicate">⎘</button>
+                                <button onclick="deleteItem('${program}', ${item.id})" class="p-1 text-[#D97757] hover:text-red-700" title="Delete">×</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            
+            // Update totals
+            updateTotals(program);
+        }
+        
+        function updateTotals(program) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const remaining = program === 'kingsmile' ? kingsmileRemaining : empowerRemaining;
+            
+            const total = plan.reduce((sum, item) => sum + item.amount, 0);
+            const projected = remaining - total;
+            
+            if (program === 'kingsmile') {
+                document.getElementById('kingsmile-total-cell').textContent = '$' + total.toFixed(2);
+                document.getElementById('kingsmile-projected').textContent = '$' + projected.toFixed(2);
+                document.getElementById('kingsmile-projected').className = projected < 0 ? 'font-semibold text-[#D97757]' : 'font-semibold text-[#2D5A3D]';
+                
+                const pct = remaining > 0 ? Math.min(Math.round((total / remaining) * 100), 100) : 0;
+                document.getElementById('kingsmile-planned-pct').textContent = pct + '% of remaining';
+                document.getElementById('kingsmile-progress').style.width = pct + '%';
+                document.getElementById('kingsmile-planned-total').textContent = '$' + total.toFixed(0);
+                document.getElementById('kingsmile-remaining-bar').textContent = '$' + remaining.toFixed(2);
+            } else {
+                document.getElementById('empower-total-cell').textContent = '$' + total.toFixed(2);
+                document.getElementById('empower-projected').textContent = '$' + projected.toFixed(2);
+                document.getElementById('empower-projected').className = projected < 0 ? 'font-semibold text-[#D97757]' : 'font-semibold text-[#2D5A3D]';
+                
+                const pct = remaining > 0 ? Math.min(Math.round((total / remaining) * 100), 100) : 0;
+                document.getElementById('empower-planned-pct').textContent = pct + '% of remaining';
+                document.getElementById('empower-progress').style.width = pct + '%';
+                document.getElementById('empower-planned-total').textContent = '$' + total.toFixed(0);
+                document.getElementById('empower-remaining-bar').textContent = '$' + remaining.toFixed(2);
+            }
+        }
+        
+        function updateItemStatus(program, id, newStatus) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const item = plan.find(i => i.id === id);
+            if (item) {
+                item.status = newStatus;
+                saveState(program);
+                // Re-render to update colors
+                renderPlanTable(program);
+            }
+        }
+        
+        function addExpense(program) {
+            const prefix = program === 'kingsmile' ? 'ks' : 'eh';
+            const category = document.getElementById(prefix + '-category').value;
+            const description = document.getElementById(prefix + '-description').value.trim();
+            const amountStr = document.getElementById(prefix + '-amount').value;
+            const vendor = document.getElementById(prefix + '-vendor').value.trim();
+            
+            if (!description || !amountStr) {
+                showToast('Please add a description and amount', 'error');
+                return;
+            }
+            
+            const amount = parseFloat(amountStr);
+            if (isNaN(amount) || amount <= 0) {
+                showToast('Amount must be a positive number', 'error');
+                return;
+            }
+            
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const newItem = {
+                id: Date.now(),
+                category: category,
+                description: description,
+                amount: amount,
+                vendor: vendor,
+                status: 'Planned',
+                notes: '',
+                added: new Date().toISOString().split('T')[0]
+            };
+            
+            plan.push(newItem);
+            saveState(program);
+            
+            // Clear form
+            document.getElementById(prefix + '-description').value = '';
+            document.getElementById(prefix + '-amount').value = '';
+            document.getElementById(prefix + '-vendor').value = '';
+            
+            renderPlanTable(program);
+            showToast('Expense added to plan', 'success');
+        }
+        
+        function editItem(program, id) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const item = plan.find(i => i.id === id);
+            if (!item) return;
+            
+            // Populate modal
+            document.getElementById('modal-program').value = program;
+            document.getElementById('modal-id').value = id;
+            document.getElementById('modal-title').textContent = 'Edit Expense';
+            
+            // Category options depend on program
+            const catSelect = document.getElementById('modal-category');
+            catSelect.innerHTML = '';
+            
+            const ksCats = ['Meals & Groceries', 'Speaker Honoraria', 'Curriculum & Books', 'Training & Professional Dev', 'Participant Gifts & Wellness', 'Events & Collaborations', 'Outreach & Printing', 'Trips & Experiences', 'Other / Coordination'];
+            const ehCats = ['Food Sessions & Meals', 'Speaker Honoraria', 'Workshop Materials', 'Curriculum & Books', 'Training & Professional Dev', 'Participant Gifts & Wellness', 'Coordination & Support', 'Trips & Experiences', 'Outreach & Events', 'Other'];
+            
+            const cats = program === 'kingsmile' ? ksCats : ehCats;
+            cats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                if (cat === item.category) opt.selected = true;
+                catSelect.appendChild(opt);
+            });
+            
+            document.getElementById('modal-description').value = item.description;
+            document.getElementById('modal-amount').value = item.amount;
+            document.getElementById('modal-vendor').value = item.vendor || '';
+            document.getElementById('modal-status').value = item.status;
+            document.getElementById('modal-notes').value = item.notes || '';
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+        }
+        
+        function saveModalEdit() {
+            const program = document.getElementById('modal-program').value;
+            const id = parseInt(document.getElementById('modal-id').value);
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const item = plan.find(i => i.id === id);
+            if (!item) return;
+            
+            item.category = document.getElementById('modal-category').value;
+            item.description = document.getElementById('modal-description').value.trim();
+            item.amount = parseFloat(document.getElementById('modal-amount').value) || 0;
+            item.vendor = document.getElementById('modal-vendor').value.trim();
+            item.status = document.getElementById('modal-status').value;
+            item.notes = document.getElementById('modal-notes').value.trim();
+            
+            saveState(program);
+            closeModal();
+            renderPlanTable(program);
+            showToast('Changes saved', 'success');
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function duplicateItem(program, id) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const item = plan.find(i => i.id === id);
+            if (!item) return;
+            
+            const copy = {...item, id: Date.now(), added: new Date().toISOString().split('T')[0]};
+            plan.push(copy);
+            saveState(program);
+            renderPlanTable(program);
+            showToast('Item duplicated', 'success');
+        }
+        
+        function deleteItem(program, id) {
+            if (!confirm('Remove this expense from the plan?')) return;
+            
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const idx = plan.findIndex(i => i.id === id);
+            if (idx > -1) {
+                plan.splice(idx, 1);
+                saveState(program);
+                renderPlanTable(program);
+            }
+        }
+        
+        function adjustRemaining(program) {
+            const current = program === 'kingsmile' ? kingsmileRemaining : empowerRemaining;
+            const newVal = prompt(`Update current remaining balance for ${program === 'kingsmile' ? 'Kingsmile Men' : 'EmpowerHER'}:\n\nCurrent: $${current.toFixed(2)}\n\nEnter new amount (from latest finance update):`, current.toFixed(2));
+            
+            if (newVal === null) return;
+            
+            const parsed = parseFloat(newVal);
+            if (isNaN(parsed) || parsed < 0) {
+                showToast('Please enter a valid non-negative number', 'error');
+                return;
+            }
+            
+            if (program === 'kingsmile') {
+                kingsmileRemaining = parsed;
+            } else {
+                empowerRemaining = parsed;
+            }
+            
+            saveState(program);
+            updateOverviewDisplays();
+            renderPlanTable(program);
+            showToast('Remaining balance updated', 'success');
+        }
+        
+        function clearProgramPlan(program) {
+            if (!confirm(`Clear ALL planned expenses for ${program === 'kingsmile' ? 'Kingsmile Men Group' : 'EmpowerHER'}? This cannot be undone.`)) return;
+            
+            if (program === 'kingsmile') {
+                kingsmilePlan = [];
+            } else {
+                empowerPlan = [];
+            }
+            saveState(program);
+            renderPlanTable(program);
+            showToast('Plan cleared', 'info');
+        }
+        
+        // Excel Export for one program
+        function exportProgramPlan(program) {
+            const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+            const remaining = program === 'kingsmile' ? kingsmileRemaining : empowerRemaining;
+            const totalPlanned = plan.reduce((s, i) => s + i.amount, 0);
+            const projected = remaining - totalPlanned;
+            const programName = program === 'kingsmile' ? 'Kingsmile Men Group' : 'EmpowerHER';
+            
+            const wb = XLSX.utils.book_new();
+            
+            // Summary sheet
+            const summaryData = [
+                ['Kingsley Association — Doomsday Budget Planner', '', '', ''],
+                ['Program:', programName, 'Generated:', new Date().toLocaleDateString()],
+                ['Invoice Deadline:', 'Thursday, June 25, 2026 5:00 PM EDT', '', ''],
+                ['', '', '', ''],
+                ['BUDGET SUMMARY', '', '', ''],
+                ['Total Budget', 8000, '', ''],
+                ['Invoiced to Date', program === 'kingsmile' ? 629 : 1080, '', ''],
+                ['Current Remaining (as of export)', remaining.toFixed(2), '', ''],
+                ['Total Planned in this export', totalPlanned, '', ''],
+                ['Projected Remaining after plan', projected, '', ''],
+                ['', '', '', ''],
+                ['IMPORTANT: Any amounts not invoiced by June 25 will be reallocated by Senior Leadership.', '', '', '']
+            ];
+            
+            const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+            
+            // Plan data sheet
+            if (plan.length > 0) {
+                const planData = plan.map(item => ({
+                    'Category': item.category,
+                    'Description': item.description,
+                    'Amount': item.amount,
+                    'Vendor / Payee': item.vendor || '',
+                    'Status': item.status,
+                    'Notes / Impact': item.notes || '',
+                    'Date Added': item.added
+                }));
+                const planSheet = XLSX.utils.json_to_sheet(planData);
+                XLSX.utils.book_append_sheet(wb, planSheet, 'Planned Expenses');
+            } else {
+                const emptySheet = XLSX.utils.aoa_to_sheet([['No expenses planned yet.']]);
+                XLSX.utils.book_append_sheet(wb, emptySheet, 'Planned Expenses');
+            }
+            
+            // Instructions
+            const instrData = [
+                ['How to use this file:'],
+                ['1. This is your working plan for the June 2026 spend window.'],
+                ['2. Update Status column as you request invoices (Planned → Invoice Requested → Invoiced).'],
+                ['3. When ready, send this file to finance / leadership.'],
+                ['4. To continue editing later: Upload this exact file back into the HTML planner tool.'],
+                [''],
+                ['Remember: All spends must serve the program mission and have clear documentation.']
+            ];
+            const instrSheet = XLSX.utils.aoa_to_sheet(instrData);
+            XLSX.utils.book_append_sheet(wb, instrSheet, 'Instructions');
+            
+            const fileName = `${programName.replace(/\s+/g, '_')}_Doomsday_Plan_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            showToast(`Exported ${programName} plan`, 'success');
+        }
+        
+        // Combined export
+        function exportBothPrograms() {
+            const wb = XLSX.utils.book_new();
+            
+            // Master summary
+            const ksTotal = kingsmilePlan.reduce((s, i) => s + i.amount, 0);
+            const ehTotal = empowerPlan.reduce((s, i) => s + i.amount, 0);
+            const ksProj = kingsmileRemaining - ksTotal;
+            const ehProj = empowerRemaining - ehTotal;
+            
+            const summaryData = [
+                ['Kingsley Association — Combined Doomsday Budget Report', '', '', '', ''],
+                ['Generated:', new Date().toLocaleString(), 'Invoice Deadline: June 25, 2026 5PM EDT', '', ''],
+                ['', '', '', '', ''],
+                ['PROGRAM', 'BUDGET', 'INVOICED', 'REMAINING', 'PLANNED', 'PROJECTED LEFT'],
+                ['Kingsmile Men Group', 8000, 1719.91, kingsmileRemaining, ksTotal, ksProj],
+                ['EmpowerHER', 8000, 2247.44, empowerRemaining, ehTotal, ehProj],
+                ['TOTAL', 16000, 3967.35, kingsmileRemaining + empowerRemaining, ksTotal + ehTotal, ksProj + ehProj],
+                ['', '', '', '', '', ''],
+                ['NOTE: Funds not invoiced by deadline will be reallocated by Senior Leadership at their discretion.']
+            ];
+            
+            const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summarySheet, 'Executive Summary');
+            
+            // Kingsmile data
+            if (kingsmilePlan.length > 0) {
+                const ksData = kingsmilePlan.map(item => ({
+                    'Program': 'Kingsmile Men Group',
+                    'Category': item.category,
+                    'Description': item.description,
+                    'Amount': item.amount,
+                    'Vendor': item.vendor || '',
+                    'Status': item.status,
+                    'Notes': item.notes || '',
+                    'Added': item.added
+                }));
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ksData), 'Kingsmile Plan');
+            }
+            
+            // Empower data
+            if (empowerPlan.length > 0) {
+                const ehData = empowerPlan.map(item => ({
+                    'Program': 'EmpowerHER',
+                    'Category': item.category,
+                    'Description': item.description,
+                    'Amount': item.amount,
+                    'Vendor': item.vendor || '',
+                    'Status': item.status,
+                    'Notes': item.notes || '',
+                    'Added': item.added
+                }));
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ehData), 'EmpowerHER Plan');
+            }
+            
+            const fileName = `Kingsley_Combined_Doomsday_Budget_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showToast('Combined report exported', 'success');
+        }
+        
+        // Upload / import
+        function uploadPlanForProgram(program) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        const data = new Uint8Array(ev.target.result);
+                        const wb = XLSX.read(data, { type: 'array' });
+                        
+                        // Look for a sheet with "Planned Expenses" or first data sheet
+                        let sheetName = wb.SheetNames.find(n => n.toLowerCase().includes('plan') || n.toLowerCase().includes('expense')) || wb.SheetNames[0];
+                        const ws = wb.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(ws);
+                        
+                        if (json.length === 0) {
+                            showToast('No data found in uploaded file', 'error');
+                            return;
+                        }
+                        
+                        // Map columns flexibly
+                        const newItems = json.map(row => {
+                            // Try common column names
+                            const category = row.Category || row.category || row['Category'] || 'Other';
+                            const description = row.Description || row.description || row['Description'] || row['Expense'] || '';
+                            const amount = parseFloat(row.Amount || row.amount || row['Amount'] || 0);
+                            const vendor = row['Vendor / Payee'] || row.Vendor || row.vendor || row['Vendor'] || '';
+                            const status = row.Status || row.status || 'Planned';
+                            const notes = row['Notes / Impact'] || row.Notes || row.notes || '';
+                            const added = row['Date Added'] || row.added || new Date().toISOString().split('T')[0];
+                            
+                            return {
+                                id: Date.now() + Math.random(),
+                                category: category,
+                                description: description,
+                                amount: isNaN(amount) ? 0 : amount,
+                                vendor: vendor,
+                                status: status,
+                                notes: notes,
+                                added: added
+                            };
+                        }).filter(item => item.description && item.amount > 0);
+                        
+                        if (newItems.length === 0) {
+                            showToast('Could not parse any valid expenses from file', 'error');
+                            return;
+                        }
+                        
+                        const plan = program === 'kingsmile' ? kingsmilePlan : empowerPlan;
+                        const confirmMsg = `Found ${newItems.length} expenses. Replace current ${program} plan with these, or merge?`;
+                        
+                        if (confirm(confirmMsg + '\n\nClick OK to REPLACE, Cancel to MERGE.')) {
+                            if (program === 'kingsmile') kingsmilePlan = newItems;
+                            else empowerPlan = newItems;
+                        } else {
+                            // merge, avoid duplicate ids
+                            newItems.forEach(item => {
+                                item.id = Date.now() + Math.random();
+                                plan.push(item);
+                            });
+                        }
+                        
+                        saveState(program);
+                        renderPlanTable(program);
+                        showToast(`Loaded ${newItems.length} expenses into ${program} plan`, 'success');
+                        
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Error reading Excel file. Make sure it was exported from this tool.', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            input.click();
+        }
+        
+        function downloadTemplate() {
+            const wb = XLSX.utils.book_new();
+            
+            // Instructions
+            const instr = [
+                ['Kingsley Association Doomsday Budget Planner — Blank Template'],
+                [''],
+                ['INSTRUCTIONS:'],
+                ['1. Fill in one row per planned expense.'],
+                ['2. Use the exact Category names from the suggestions or your own.'],
+                ['3. Status should be one of: Planned, Invoice Requested, Invoiced, Paid / Completed'],
+                ['4. Save as .xlsx and upload back into the HTML planner tool when ready to continue.'],
+                [''],
+                ['Program should be either "Kingsmile Men Group" or "EmpowerHER"'],
+                [''],
+                ['COLUMNS: Program | Category | Description | Amount | Vendor | Status | Notes | Added (YYYY-MM-DD)']
+            ];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instr), 'Instructions');
+            
+            // Empty Kingsmile sheet
+            const ksHeaders = ['Program', 'Category', 'Description', 'Amount', 'Vendor', 'Status', 'Notes', 'Added'];
+            const ksEmpty = [ksHeaders];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ksEmpty), 'Kingsmile Plan');
+            
+            // Empty Empower sheet
+            const ehEmpty = [ksHeaders];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ehEmpty), 'EmpowerHER Plan');
+            
+            XLSX.writeFile(wb, 'Kingsley_Doomsday_Budget_Template.xlsx');
+            showToast('Blank template downloaded', 'success');
+        }
+        
+        // Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-[#2D5A3D]';
+            if (type === 'error') bg = 'bg-[#D97757]';
+            if (type === 'info') bg = 'bg-[#5C8AA6]';
+            
+            toast.className = `toast ${bg} text-white px-5 py-3 rounded-2xl shadow-xl text-sm flex items-center gap-x-3 max-w-xs`;
+            toast.innerHTML = `
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+        
+        // Demo refresh (simulates pulling latest from Excel)
+        function refreshFromExcelDemo() {
+            showToast('In real use this would pull latest invoice data from finance system', 'info');
+            // For demo, just flash the numbers
+            const ks = document.getElementById('kingsmile-remaining-display');
+            const eh = document.getElementById('empower-remaining-display');
+            if (ks) ks.style.transition = 'all 0.2s';
+            if (eh) eh.style.transition = 'all 0.2s';
+            
+            setTimeout(() => {
+                if (ks) ks.style.opacity = '0.3';
+                if (eh) eh.style.opacity = '0.3';
+            }, 100);
+            setTimeout(() => {
+                if (ks) ks.style.opacity = '1';
+                if (eh) eh.style.opacity = '1';
+                showToast('Snapshot refreshed (demo)', 'success');
+            }, 450);
+        }
+        
+        // Initialize everything
+        function initialize() {
+            initTailwind();
+            loadState();
+            startCountdown();
+            renderSuggestions();
+            
+            // Initial render of tables
+            renderPlanTable('kingsmile');
+            renderPlanTable('empower');
+            
+            // Show overview by default
+            document.getElementById('overview-section').classList.remove('hidden');
+            
+            // Keyboard hint
+            console.log('%c[Kingsley Doomsday Planner] Ready. Use browser console if needed for debugging.', 'color:#8A8A7A');
+            
+            // Gentle first-time message if no plans yet
+            setTimeout(() => {
+                if (kingsmilePlan.length === 0 && empowerPlan.length === 0) {
+                    const hasSeen = safeLocalStorageGet('kingsley_planner_welcome');
+                    if (!hasSeen) {
+                        safeLocalStorageSet('kingsley_planner_welcome', '1');
+                    }
+                }
+            }, 2200);
+            
+            // Make sure modal closes on escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('edit-modal');
+                    if (!modal.classList.contains('hidden')) {
+                        closeModal();
+                    }
+                }
+            });
+            
+            // Bonus: allow clicking remaining numbers in overview to jump to planner
+            const ksDisp = document.getElementById('kingsmile-remaining-display');
+            if (ksDisp) ksDisp.style.cursor = 'pointer';
+            if (ksDisp) ksDisp.onclick = () => document.getElementById('kingsmile-planner').scrollIntoView({behavior:'smooth'});
+            
+            const ehDisp = document.getElementById('empower-remaining-display');
+            if (ehDisp) ehDisp.style.cursor = 'pointer';
+            if (ehDisp) ehDisp.onclick = () => document.getElementById('empower-planner').scrollIntoView({behavior:'smooth'});
+        }
+        
+        // Boot
+        window.onload = initialize;
+    </script>
+</body>
+</html>
